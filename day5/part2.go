@@ -38,16 +38,16 @@ func main() {
 		seats = append(seats, int(id))
 	}
 
-  sort.Ints(seats)
-  var mySeat int
-  for i, n := range seats {
-     if n == len(seats) {
-        break
-     }
-     if seats[i] + 1 != seats[i + 1] {
-       mySeat = seats[i] + 1
-     }
-  }
-  fmt.Println("Seat ID:", mySeat)
+	sort.Ints(seats)
+	var mySeat int
+	for i, n := range seats {
+		if n == len(seats) {
+			break
+		}
+		if seats[i]+1 != seats[i+1] {
+			mySeat = seats[i] + 1
+		}
+	}
+	fmt.Println("Seat ID:", mySeat)
 	os.Exit(0)
 }
