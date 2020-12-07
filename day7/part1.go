@@ -3,13 +3,10 @@ package main
 import (
 	"bufio"
 	"fmt"
-	"io"
 	"log"
 	"os"
-	"strings"
+	"regexp"
 )
-
-var count int
 
 type node struct {
 	color       string
@@ -23,6 +20,9 @@ func newNode(color string) *node {
 	}
 }
 
+var colorRegexp = regexp.MustCompile(`(\w+ \w+) bags contain`)
+var bagsRegexp = regexp.MustCompile(`(\d) (\w+ \w+)`)
+
 func main() {
 	f, err := os.Open("input.txt")
 	if err != nil {
@@ -35,33 +35,28 @@ func main() {
 	sc := bufio.NewScanner(f)
 	for sc.Scan() {
 		next := sc.Text()
-		split := strings.Split(next, "bags")
-		split = strings.Split(strings.Join(split, " "), "contain")
-		color := split[0]
-		color = strings.TrimSpace(color)
-		node := newNode(color)
-		nodes[color] = node
-	}
-	nodes["o other"] = newNode("o other")
+		color := colorRegexp.FindStringSubmatch(next)[1]
 
-	f.Seek(0, io.SeekStart)
+		// Graph construction - don't nuke nodes if created as part of containedBy
+		_, ok := nodes[color]
+		if !ok {
+			node := newNode(color)
+			nodes[node.color] = node
+		}
 
-	sc = bufio.NewScanner(f)
-	for sc.Scan() {
-		next := sc.Text()
-		split := strings.Split(next, "bags")
-		split = strings.Split(strings.Join(split, " "), "contain")
-		color := split[0]
-		color = strings.TrimSpace(color)
-		contains := strings.ReplaceAll(split[1], ".", "")
-		containsSplit := strings.Split(contains, ",")
+		// Matches are in form:     0       1  2
+		//                      [n col col, n, col col]
+		containedBags := bagsRegexp.FindAllStringSubmatch(next, -1)
 
-		for _, v := range containsSplit {
-			containsColor := v[2:]
-			containsColor = strings.ReplaceAll(containsColor, "bags", "")
-			containsColor = strings.ReplaceAll(containsColor, "bag", "")
-			containsColor = strings.TrimSpace(containsColor)
-			node := nodes[containsColor]
+		for _, v := range containedBags {
+			containingColor := v[2]
+
+			// If node doesn't already exist, create it in the list
+			node, ok := nodes[containingColor]
+			if !ok {
+				node = newNode(containingColor)
+				nodes[node.color] = node
+			}
 			node.containedBy[color] = nodes[color]
 		}
 	}
@@ -73,6 +68,7 @@ func main() {
 	os.Exit(0)
 }
 
+// Simple DFS search, whatever
 func recursiveSearch(n *node, set map[string]struct{}) {
 	if len(n.containedBy) == 0 {
 		return
