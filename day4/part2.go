@@ -145,12 +145,16 @@ func (p *passport) isValidHeight() bool {
 	if p.heightUnit == "cm" && !(p.height < 150 || 193 < p.height) {
 		return true
 	}
-	if p.heightUnit == "in" && !(p.height < 59 || 75 < p.height) { // This seems to be a bug, 76 should be valid
+	// This seems to be a bug, 76 should give a valid submission (it doesn't)
+	// - or I've messed up a range somewhere else
+	if p.heightUnit == "in" && !(p.height < 59 || 75 < p.height) {
 		return true
 	}
 	return false
 }
 
+// This and InvalidFields() are pure debugging... I could not for the life of
+// me figure out why my answer was repeatedly wrong
 func (p *passport) String() string {
 	var out []string
 	out = append(out, "[")
