@@ -11,6 +11,91 @@ import (
 
 var lineRegex = regexp.MustCompile(`(acc|jmp|nop) (\+|-)(\d+)`)
 
+type computer struct {
+	sc    *bufio.Scanner
+	acc   int
+	pos   int
+	line  int
+	lines map[int]string
+	seen  map[int]struct{}
+}
+
+func newComputer(sc *bufio.Scanner) *computer {
+	return &computer{
+		sc:    sc,
+		lines: make(map[int]string),
+		seen:  make(map[int]struct{}),
+	}
+}
+
+func (c *computer) execute(next string) {
+	m := lineRegex.FindStringSubmatch(next)
+	op, sign := m[1], m[2]
+	val, err := strconv.Atoi(m[3])
+	if err != nil {
+		fmt.Println("Could not convert:", err)
+	}
+
+	switch op {
+	case "acc":
+		if sign == "+" {
+			c.acc += val
+		}
+		if sign == "-" {
+			c.acc -= val
+		}
+		c.pos++
+	case "jmp":
+		if sign == "+" {
+			c.pos += val
+		}
+		if sign == "-" {
+			c.pos -= val
+		}
+	case "nop":
+		c.pos++
+	}
+}
+
+func (c *computer) printState(next string) {
+	fmt.Printf("%s pos=%d line=%d acc=%d seen=%v lines=%v\n", next, c.pos, c.line, c.acc, c.seen, c.lines)
+}
+
+func (c *computer) process(next string) {
+	_, ok := c.seen[c.pos]
+	if ok {
+		fmt.Println("Acc:", c.acc)
+		os.Exit(0)
+	}
+
+	c.printState(next)
+	c.lines[c.line] = next
+	c.seen[c.pos] = struct{}{}
+	c.execute(next)
+}
+
+func (c *computer) run() {
+	for c.sc.Scan() {
+		// Catch up lines
+		if c.pos > c.line {
+			c.lines[c.line] = c.sc.Text() // Need to store these in case we need to jump back
+			c.line++
+			continue
+		}
+
+		// Line and pos are equal
+		next := c.sc.Text()
+		c.process(next)
+
+		// Read from history until caught up
+		for c.pos <= c.line {
+			next := c.lines[c.pos]
+			c.process(next)
+		}
+		c.line++
+	}
+}
+
 func main() {
 	f, err := os.Open("input.txt")
 	if err != nil {
@@ -20,133 +105,8 @@ func main() {
 
 	sc := bufio.NewScanner(f)
 
-	// Ok, let's try moving through a file without storing every line in
-	// memory...  Rules:
-	// 1. if we actually read a line, store it
-	// 2. if we have to jump back to a line we haven't seen yet, we can go from
-	//    the last read line
-	// 3. why do i do this to myself...
-	//
-	//
-	// tiny 5 line example (input_smol_smol.txt) - expect a loop
-	//
-	// 0 nop +1
-	// 1 acc +1
-	// 2 jmp +3
-	// 3 acc +2
-	// 4 acc +1
-	// 5 jmp -2
-	//
-	// seen: [0,1,2,5,3,4] (exit on return to 5)
-	// acc: 4
-
-	var acc int
-	var pos int
-	var line int
-
-	lines := make(map[int]string)
-	seen := make(map[int]struct{})
-
-	for sc.Scan() {
-		if pos > line {
-			lines[line] = sc.Text()
-			line++
-			continue
-		}
-
-		// Termination condition - have we been here before?
-		_, ok := seen[pos]
-		if ok {
-			fmt.Println("Acc:", acc)
-			os.Exit(0)
-		}
-
-		// Read the line, even if it's a jmp we need to read and store it
-		next := sc.Text()
-		fmt.Printf("%s pos=%d line=%d acc=%d seen=%v lines=%v\n", next, pos, line, acc, seen, lines)
-		lines[line] = next
-
-		// Decipher the instruction
-		m := lineRegex.FindStringSubmatch(next)
-		instruction := m[1]
-		sign := m[2]
-		val, err := strconv.Atoi(m[3])
-		if err != nil {
-			fmt.Println("Could not convert:", err)
-		}
-
-		// Store the fact that we have seen the instruction
-		seen[pos] = struct{}{}
-
-		// Do the thing
-		switch instruction {
-		case "acc":
-			if sign == "+" {
-				acc += val
-			}
-			if sign == "-" {
-				acc -= val
-			}
-			pos++
-		case "jmp":
-			if sign == "+" {
-				pos += val
-			}
-			if sign == "-" {
-				pos -= val
-			}
-		case "nop":
-			pos++
-		}
-
-		for pos <= line {
-			// Termination condition - have we been here before?
-			_, ok := seen[pos]
-			if ok {
-				fmt.Println("Acc:", acc)
-				os.Exit(0)
-			}
-
-			// Read the line, even if it's a jmp we need to read and store it
-			next := lines[pos]
-			fmt.Printf("%s pos=%d line=%d acc=%d seen=%v lines=%v\n", next, pos, line, acc, seen, lines)
-			lines[line] = next
-
-			// Decipher the instruction
-			m := lineRegex.FindStringSubmatch(next)
-			instruction := m[1]
-			sign := m[2]
-			val, err := strconv.Atoi(m[3])
-			if err != nil {
-				fmt.Println("Could not convert:", err)
-			}
-
-			// Store the fact that we have seen the instruction
-			seen[pos] = struct{}{}
-
-			// Do the thing
-			switch instruction {
-			case "acc":
-				if sign == "+" {
-					acc += val
-				}
-				if sign == "-" {
-					acc -= val
-				}
-				pos++
-			case "jmp":
-				if sign == "+" {
-					pos += val
-				}
-				if sign == "-" {
-					pos -= val
-				}
-			case "nop":
-				pos++
-			}
-		}
-		line++
-	}
+	c := newComputer(sc)
+	c.run()
 
 	os.Exit(1) // No solution found? Or return acc?
 }
