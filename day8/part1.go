@@ -58,7 +58,7 @@ func (c *computer) execute(next string) {
 }
 
 func (c *computer) printState(next string) {
-	fmt.Printf("%s pos=%d line=%d acc=%d seen=%v lines=%v\n", next, c.pos, c.line, c.acc, c.seen, c.lines)
+	fmt.Printf("%s pos=%d line=%d acc=%d seen=%v lines=%v\n", next, c.pos, c.line, c.acc, len(c.seen), len(c.lines))
 }
 
 func (c *computer) process(next string) {
@@ -74,6 +74,9 @@ func (c *computer) process(next string) {
 	c.execute(next)
 }
 
+// Amusingly, trying to not read the entire file only saves reading 29 lines.
+// Probably the only improvement from here is to actually move through the
+// file based on newlines...
 func (c *computer) run() {
 	for c.sc.Scan() {
 		// Catch up lines
