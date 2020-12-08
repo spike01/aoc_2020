@@ -5,9 +5,11 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"regexp"
 	"strconv"
-	"strings"
 )
+
+var lineRegex = regexp.MustCompile(`(acc|jmp|nop) (\+|-)(\d+)`)
 
 func main() {
 	f, err := os.Open("input.txt")
@@ -19,9 +21,6 @@ func main() {
 	sc := bufio.NewScanner(f)
 
 	var lineCount int
-	var acc int
-	var pos int
-
 	lines := make(map[int]string)
 
 	for sc.Scan() {
@@ -29,17 +28,12 @@ func main() {
 		lineCount++
 	}
 
-	seen := make(map[int]struct{})
-
-	fmt.Println("Lines:", len(lines))
-
 Outer:
 	for i := 0; i < len(lines); i++ {
 
-		// Reset for new attempt
-		acc = 0
-		pos = 0
-		seen = make(map[int]struct{})
+		var acc int
+		var pos int
+		seen := make(map[int]struct{})
 
 		for pos <= len(lines) {
 			if pos == len(lines) {
@@ -60,15 +54,13 @@ Outer:
 
 			seen[pos] = struct{}{}
 
-			line := strings.Split(next, " ")
-			arg := line[1]
-			sign := string(arg[0])
-			val, err := strconv.Atoi(arg[1:])
+			m := lineRegex.FindStringSubmatch(next)
+			instruction := m[1]
+			sign := m[2]
+			val, err := strconv.Atoi(m[3])
 			if err != nil {
 				fmt.Println("Could not convert:", err)
 			}
-
-			instruction := line[0]
 
 			if pos == i {
 				switch instruction {
@@ -101,5 +93,5 @@ Outer:
 		}
 	}
 
-	os.Exit(0)
+	os.Exit(1) // No solution found
 }
