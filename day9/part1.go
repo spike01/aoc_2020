@@ -52,17 +52,17 @@ func findSum(chunk []int, n int) bool {
 	tmp := make([]int, len(chunk))
 	copy(tmp, chunk)
 	sort.Ints(tmp)
-	for i := 0; i < len(tmp); i++ {
-		for j := len(tmp) - 1; 0 < j; j-- {
-			if tmp[j] > n {
-				continue
-			}
-			if tmp[i] > n {
-				continue
-			}
-			if tmp[i]+tmp[j] == n {
-				return true
-			}
+	l := 0
+	r := len(tmp) - 1
+	for l < r {
+		sum := tmp[l] + tmp[r]
+		switch {
+		case sum == n:
+			return true
+		case sum < n:
+			l++
+		case sum > n:
+			r--
 		}
 	}
 	return false
