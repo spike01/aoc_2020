@@ -69,7 +69,7 @@ func (c *computer) process(next string) {
 	}
 
 	c.printState(next)
-	c.lines[c.line] = next
+	c.lines[c.pos] = next
 	c.seen[c.pos] = struct{}{}
 	c.execute(next)
 }
