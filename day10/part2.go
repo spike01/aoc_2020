@@ -63,6 +63,34 @@ func main() {
 	}
 
 	total := 1
+	// What are these magic numbers???
+	// They are the number of paths through a sequential run of numbers:
+	//  +1 +1 (2)
+	// 0  1  2
+	//
+	// 0  1
+	// 0     2 -> 2 branches
+	//
+	//  +1 +1 +1 (3)
+	// 0  1  2  3
+	//
+	// 0  1  2  3
+	// 0  1     3
+	// 0     2  3
+	// 0        3 -> 4 branches
+	//
+	//  +1 +1 +1 +1 (3)
+	// 0  1  2  3  4
+	//
+	// 0  1  2  3  4
+	// 0  1  2     4
+	// 0  1     3  4
+	// 0     2  3  4
+	// 0     2     4
+	// 0        3  4
+	// 0  1        4 -> 7 branches
+	//
+	// Normally I'd compute this so it would work for arbitrary gaps, but ¯\_(ツ)_/¯
 	for _, v := range consolidated {
 		switch v {
 		case 4:
