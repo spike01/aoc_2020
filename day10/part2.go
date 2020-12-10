@@ -44,31 +44,26 @@ func main() {
 		if i == len(adapters)-1 {
 			break
 		}
-		switch diff := adapters[i+1] - adapters[i]; diff {
-		case 3:
-			gaps = append(gaps, 3)
-		case 2:
-			gaps = append(gaps, 2)
-		case 1:
-			gaps = append(gaps, 1)
-		}
+		diff := adapters[i+1] - adapters[i]
+		gaps = append(gaps, diff)
 	}
 
-	var refinedGaps []int
+	var consolidated []int
 	var count int
 
 	for _, v := range gaps {
 		if v == 3 {
 			if count > 1 {
-				refinedGaps = append(refinedGaps, count)
+				consolidated = append(consolidated, count)
 			}
 			count = 0
 			continue
 		}
 		count++
 	}
+
 	total := 1
-	for _, v := range refinedGaps {
+	for _, v := range consolidated {
 		switch v {
 		case 4:
 			total *= 7
