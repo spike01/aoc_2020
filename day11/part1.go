@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"strings"
 )
 
 type coord struct {
@@ -108,13 +109,15 @@ func (b *board) countOccupied() int {
 	return count
 }
 
-func (b *board) print() {
+func (b *board) String() string {
+	var out strings.Builder
 	b.iterate(func(p *pos, c *coord) {
-		fmt.Printf("%s", string(p.state))
+		fmt.Fprintf(&out, "%s", string(p.state))
 		if c.column == b.columns-1 {
-			fmt.Printf("\n")
+			fmt.Fprintf(&out, "\n")
 		}
 	})
+	return out.String()
 }
 
 func main() {
