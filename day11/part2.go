@@ -7,19 +7,144 @@ import (
 	"os"
 )
 
+var directions = [][]int{
+	[]int{0, 1},
+	[]int{0, -1},
+	[]int{1, 0},
+	[]int{-1, 0},
+	[]int{-1, 1},
+	[]int{1, 1},
+	[]int{-1, -1},
+	[]int{1, -1},
+}
+
 type coord struct {
 	row    int
 	column int
-}
-
-func newCoord(row, column int) *coord {
-	return &coord{row: row, column: column}
 }
 
 type pos struct {
 	state      rune
 	nextState  rune
 	neighbours []*pos
+}
+
+type board struct {
+	positions map[coord]*pos
+	rows      int
+	columns   int
+	changed   bool
+}
+
+func newBoard() *board {
+	return &board{
+		positions: make(map[coord]*pos),
+		changed:   true,
+	}
+}
+
+func (b *board) iterate(f func(*pos, *coord)) {
+	for r := 0; r < b.rows; r++ {
+		for c := 0; c < b.columns; c++ {
+			coord := &coord{row: r, column: c}
+			pos := b.positions[*coord]
+			f(pos, coord)
+		}
+	}
+}
+
+func (b *board) setNeighbours() {
+	b.iterate(func(p *pos, c *coord) {
+		p.neighbours = b.neighbours(c)
+	})
+}
+
+func (b *board) neighbours(c *coord) []*pos {
+	var neighbours []*pos
+	x := []int{-1, 0, 1}
+	y := []int{-1, 0, 1}
+
+	for _, i := range x {
+		for _, j := range y {
+			coord := &coord{row: c.row + i, column: c.column + j}
+			n, ok := b.positions[*coord]
+			if ok && !(i == 0 && j == 0) {
+				neighbours = append(neighbours, n)
+			}
+		}
+	}
+	return neighbours
+}
+
+func (b *board) setNextState() {
+	b.changed = false
+	b.iterate(func(p *pos, c *coord) {
+		if p.state == '.' {
+			p.nextState = '.'
+			return
+		}
+
+		var occupied int
+	outer:
+		for _, d := range directions {
+			x := c.row
+			y := c.column
+			next_coord := c
+			found := true
+
+			for found {
+				x = x + d[0]
+				y = y + d[1]
+				next_coord = &coord{row: x, column: y}
+				pos, ok := b.positions[*next_coord]
+				found = ok
+				if ok {
+					switch pos.state {
+					case '#':
+						occupied++
+						continue outer
+					case 'L':
+						continue outer
+					}
+				}
+			}
+		}
+
+		if p.state == 'L' && occupied == 0 {
+			p.nextState = '#'
+			b.changed = true
+		}
+
+		if p.state == '#' && occupied >= 5 {
+			p.nextState = 'L'
+			b.changed = true
+		}
+	})
+}
+
+func (b *board) changeState() {
+	b.iterate(func(p *pos, c *coord) {
+		p.state = p.nextState
+	})
+}
+
+func (b *board) countOccupied() int {
+	var count int
+	b.iterate(func(p *pos, c *coord) {
+		if p.state == '#' {
+			count++
+		}
+	})
+	return count
+}
+
+func (b *board) print() {
+	b.iterate(func(p *pos, c *coord) {
+		fmt.Printf("%s", string(p.state))
+		if c.column == b.columns-1 {
+			fmt.Printf("\n")
+		}
+	})
 }
 
 func main() {
@@ -31,152 +156,28 @@ func main() {
 
 	sc := bufio.NewScanner(f)
 	var row int
-	var width int
-	board := make(map[coord]*pos)
+	b := newBoard()
 
 	for sc.Scan() {
 		next := sc.Text()
 		for column, v := range next {
-			coord := newCoord(row, column)
+			coord := &coord{row: row, column: column}
 			pos := &pos{state: v}
-			board[*coord] = pos
-			width = len(next)
+			b.positions[*coord] = pos
+			b.columns = len(next)
 		}
 		row++
 	}
+	b.rows = row
 
-	setNeighbours(board, row, width)
+	b.setNeighbours()
 
-	changed := 1
-	for changed != 0 {
-		changed = 0
-		setNextState(board, row, width, &changed)
-		changeState(board, row, width)
+	for b.changed {
+		b.setNextState()
+		b.changeState()
 	}
 
-	fmt.Println(countOccupied(board, row, width))
+	fmt.Println(b.countOccupied())
 
 	os.Exit(0)
-}
-
-func setNeighbours(board map[coord]*pos, row, width int) {
-	for r := 0; r < row; r++ {
-		for c := 0; c < width; c++ {
-			coord := newCoord(r, c)
-			pos := board[*coord]
-			pos.neighbours = neighbours(coord, board)
-		}
-	}
-}
-
-func neighbours(c *coord, b map[coord]*pos) []*pos {
-	var neighbours []*pos
-	x := []int{-1, 0, 1}
-	y := []int{-1, 0, 1}
-
-	for _, i := range x {
-		for _, j := range y {
-			coord := newCoord(c.row+i, c.column+j)
-			n, ok := b[*coord]
-			if ok && !(i == 0 && j == 0) {
-				neighbours = append(neighbours, n)
-			}
-		}
-	}
-	return neighbours
-}
-
-func setNextState(board map[coord]*pos, row int, width int, changed *int) {
-	for r := 0; r < row; r++ {
-		for c := 0; c < width; c++ {
-			coord := newCoord(r, c)
-			pos := board[*coord]
-
-			if pos.state == '.' {
-				pos.nextState = '.'
-				continue
-			}
-
-			var occupied int
-			directions := [][]int{ // x, y - these are prob wrong but it doesn't matter as long as they are all here
-				[]int{0, 1},   // N
-				[]int{0, -1},  // S
-				[]int{1, 0},   // E
-				[]int{-1, 0},  // W
-				[]int{-1, 1},  // NW
-				[]int{1, 1},   // NE
-				[]int{-1, -1}, // SW
-				[]int{1, -1},  // SE
-			}
-
-		outer:
-			for _, d := range directions {
-				x := r
-				y := c
-				next_coord := coord
-				found := true
-
-				for found {
-					x = x + d[0]
-					y = y + d[1]
-					next_coord = newCoord(x, y)
-					p, ok := board[*next_coord]
-					found = ok
-					if ok {
-						switch p.state {
-						case '#':
-							occupied++
-							continue outer
-						case 'L':
-							continue outer
-						}
-					}
-				}
-			}
-
-			if pos.state == 'L' && occupied == 0 {
-				pos.nextState = '#'
-				*changed++
-			}
-
-			if pos.state == '#' && occupied >= 5 {
-				pos.nextState = 'L'
-				*changed++
-			}
-		}
-	}
-}
-
-func changeState(b map[coord]*pos, row, width int) {
-	for r := 0; r < row; r++ {
-		for c := 0; c < width; c++ {
-			coord := newCoord(r, c)
-			pos := b[*coord]
-			pos.state = pos.nextState
-		}
-	}
-}
-
-func countOccupied(b map[coord]*pos, row, width int) int {
-	var count int
-	for r := 0; r < row; r++ {
-		for c := 0; c < width; c++ {
-			coord := newCoord(r, c)
-			pos := b[*coord]
-			if pos.state == '#' {
-				count++
-			}
-		}
-	}
-	return count
-}
-
-func printBoard(b map[coord]*pos, row, width int) {
-	for r := 0; r < row; r++ {
-		for c := 0; c < width; c++ {
-			coord := newCoord(r, c)
-			fmt.Printf("%s", string(b[*coord].state))
-		}
-		fmt.Printf("\n")
-	}
 }
