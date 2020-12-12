@@ -4,6 +4,6 @@
 
 * not sure why anyone would want to run these, but if you do, each day has to
   be run from within its directory
-* for _no particularly good reason_, this year I'm trying to do everything with a single pass thorugh the
+* for _no particularly good reason_, this year I'm trying to do everything with a single pass through the
   input file, and attempting to never store the entire file in memory unless
-  absolutely necessary
+  absolutely necessary (not always possible)

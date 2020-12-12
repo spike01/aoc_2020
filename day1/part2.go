@@ -57,8 +57,8 @@ func main() {
 }
 
 func contains(nums []int, i int) bool {
-	for j := range nums {
-		if nums[j] == i {
+	for _, n := range nums {
+		if n == i {
 			return true
 		}
 	}
