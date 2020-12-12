@@ -41,43 +41,9 @@ func main() {
 		case 'W':
 			w_x -= value
 		case 'L':
-			rotation := value / 90
-			switch rotation {
-			case 1:
-				tmp_x := w_x
-				tmp_y := w_y
-				w_x = -tmp_y
-				w_y = tmp_x
-			case 2:
-				tmp_x := w_x
-				tmp_y := w_y
-				w_x = -tmp_x
-				w_y = -tmp_y
-			case 3:
-				tmp_x := w_x
-				tmp_y := w_y
-				w_x = tmp_y
-				w_y = -tmp_x
-			}
+			w_x, w_y = rotate(value, w_x, w_y)
 		case 'R':
-			rotation := value / 90
-			switch rotation {
-			case 1:
-				tmp_x := w_x
-				tmp_y := w_y
-				w_x = tmp_y
-				w_y = -tmp_x
-			case 2:
-				tmp_x := w_x
-				tmp_y := w_y
-				w_x = -tmp_x
-				w_y = -tmp_y
-			case 3:
-				tmp_x := w_x
-				tmp_y := w_y
-				w_x = -tmp_y
-				w_y = tmp_x
-			}
+			w_x, w_y = rotate(flip(value), w_x, w_y)
 		case 'F':
 			x += (value * w_x)
 			y += (value * w_y)
@@ -89,12 +55,26 @@ func main() {
 	os.Exit(0)
 }
 
-func posMod(n, modulus int) int {
-	mod := n % modulus
-	if mod < 0 {
-		return mod + modulus
+func flip(n int) int {
+	if n == 90 {
+		return 270
 	}
-	return mod
+	if n == 270 {
+		return 90
+	}
+	return n
+}
+
+func rotate(value, w_x, w_y int) (int, int) {
+	switch value {
+	case 90:
+		return -w_y, w_x
+	case 180:
+		return -w_x, -w_y
+	case 270:
+		return w_y, -w_x
+	}
+	return w_x, w_y
 }
 
 func abs(x int) int {
