@@ -36,31 +36,28 @@ func main() {
 
 	target := 30000000
 	turn := 1
-	numbers := make(map[int][]int)
+	numbers := make(map[int]int)
 
 	for turn < len(starters) {
 		next = starters[turn-1]
-		numbers[next] = append(numbers[next], turn)
+		numbers[next] = turn
 		turn++
 	}
 
 	next = starters[len(starters)-1]
 
 	for turn < target {
-		positions, ok := numbers[next]
+		position, ok := numbers[next]
 
 		if !ok {
-			numbers[next] = append(numbers[next], turn)
+			numbers[next] = turn
 			next = 0
 			turn++
 			continue
 		}
 
-		lastTurn := positions[len(positions)-1]
-		numbers[next] = append(numbers[next], turn)
-
-		next = turn - lastTurn
-
+		numbers[next] = turn
+		next = turn - position
 		turn++
 	}
 
