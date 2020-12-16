@@ -119,6 +119,8 @@ func mapSum(intMap map[int]int) int {
 	return total
 }
 
+// This "increments" left->right, because it doesn't actually matter which
+// order as long as we do all permutations of the reduced bitfield
 func incrementOne(bits []int) {
 	carry := true
 	for i, _ := range bits {
